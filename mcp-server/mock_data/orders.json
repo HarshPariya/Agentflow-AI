@@ -1,0 +1,56 @@
+{
+  "4521": {
+    "order_id": "4521",
+    "customer_id": "CUST-9081",
+    "customer_name": "Sarah Connor",
+    "status": "eligible",
+    "eligible": true,
+    "days_since_purchase": 12,
+    "purchase_date": "2026-08-30",
+    "total_amount": 149.99,
+    "items": [
+      {
+        "sku": "AG-HW-01",
+        "name": "Agentflow Hardware Gateway V1",
+        "quantity": 1,
+        "price": 149.99
+      }
+    ]
+  },
+  "1002": {
+    "order_id": "1002",
+    "customer_id": "CUST-3310",
+    "customer_name": "John Doe",
+    "status": "ineligible",
+    "eligible": false,
+    "days_since_purchase": 45,
+    "purchase_date": "2026-07-28",
+    "total_amount": 79.50,
+    "items": [
+      {
+        "sku": "AG-SW-DEV",
+        "name": "Developer License Annual",
+        "quantity": 1,
+        "price": 79.50
+      }
+    ]
+  },
+  "7823": {
+    "order_id": "7823",
+    "customer_id": "CUST-4122",
+    "customer_name": "Elena Rostova",
+    "status": "delivered",
+    "eligible": true,
+    "days_since_purchase": 5,
+    "purchase_date": "2026-09-06",
+    "total_amount": 499.00,
+    "items": [
+      {
+        "sku": "AG-ENT-02",
+        "name": "Enterprise Cluster Node",
+        "quantity": 2,
+        "price": 499.00
+      }
+    ]
+  }
+}
