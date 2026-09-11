@@ -10,6 +10,15 @@ jobs:
   backend-test:
     name: Backend Test Suite
     runs-on: ubuntu-latest
+    services:
+      mongodb:
+        image: mongo:6.0
+        ports:
+          - 27017:27017
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -25,6 +34,8 @@ jobs:
       - name: Run Backend Pytest Suite
         env:
           PYTHONPATH: apps/api
+          MONGODB_URI: mongodb://localhost:27017
+          REDIS_URL: redis://localhost:6379
         run: pytest apps/api/tests -v
 
   frontend-build:

@@ -32,7 +32,35 @@ Return ONLY a JSON list of objects:
 
 
 def extract_tool_calls(query: str) -> List[Dict[str, Any]]:
-    """Extracts structured tool calls using LLM reasoning with JSON fallback."""
+    """Extracts structured tool calls using regex fast-paths and LLM reasoning."""
+    # 1. Order ID pattern:
+    order_match = re.search(r"\border(?:\s*(?:id|#|number|status)?\s*[:=]?\s*)?(\d{4,10})\b", query, re.IGNORECASE)
+    if not order_match and "order" in query.lower():
+        order_match = re.search(r"\b(\d{4,10})\b", query)
+
+    if order_match and not ("ticket" in query.lower() and "tik" in query.lower()):
+        return [{"tool": "order_lookup", "arguments": {"order_id": order_match.group(1)}}]
+
+    # 2. Ticket ID lookup pattern:
+    ticket_match = re.search(r"\b(TIK-[A-Za-z0-9]+)\b", query, re.IGNORECASE)
+    if "ticket" in query.lower() and ticket_match and "create" not in query.lower():
+        return [{"tool": "ticket_lookup", "arguments": {"ticket_id": ticket_match.group(1).upper()}}]
+
+    # 3. Create ticket pattern:
+    if "create" in query.lower() and "ticket" in query.lower():
+        priority = "urgent" if "urgent" in query.lower() else "normal"
+        clean_subj = re.sub(r"\b(create|an?|urgent|ticket|for|a|please)\b", "", query, flags=re.IGNORECASE).strip(" :-,")
+        subject = clean_subj.capitalize() if clean_subj else "Production Support Ticket"
+        return [{
+            "tool": "create_ticket",
+            "arguments": {
+                "subject": subject,
+                "description": query.strip(),
+                "priority": priority
+            }
+        }]
+
+    # 4. LLM reasoning fallback
     llm_out = call_llm(ARG_EXTRACTION_PROMPT.format(query=query))
     match = re.search(r"\[.*\]", llm_out, re.DOTALL)
     if match:
@@ -74,8 +102,7 @@ async def tool_executor_node(state: AgentState) -> Dict[str, Any]:
 
     # Extract new tool calls from query
     tool_calls = extract_tool_calls(query)
-    if not tool_calls and "4521" in query:
-        tool_calls = [{"tool": "order_lookup", "arguments": {"order_id": "4521"}}]
+
 
     for call in tool_calls:
         tool_name = call.get("tool", "")
