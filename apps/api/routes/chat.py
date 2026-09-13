@@ -18,7 +18,7 @@ from agent.nodes.retriever import retriever_node
 from agent.nodes.tool_executor import tool_executor_node
 from agent.nodes.responder import responder_node
 from agent.nodes.clarify import clarify_node
-from db.audit_logger import record_audit_step
+from db.audit_logger import record_audit_step, get_last_pending_action
 from db.mongo import get_db
 from agent_types.api import ChatRequest
 
@@ -94,16 +94,7 @@ async def chat_endpoint(req: ChatRequest):
         logger.debug("History query notice: %s", exc)
 
     # 3. Check for any pending action from previous turn (for Guardrail confirmation)
-    pending_action = None
-    try:
-        last_guardrail_log = await db.audit_logs.find_one(
-            {"conversation_id": conversation_id, "step_type": "guardrail_pending"},
-            sort=[("created_at", -1)]
-        )
-        if last_guardrail_log:
-            pending_action = last_guardrail_log.get("step_detail")
-    except Exception:
-        pass
+    pending_action = await get_last_pending_action(conversation_id)
 
     async def event_stream() -> AsyncGenerator[str, None]:
         state = {

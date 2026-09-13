@@ -30,6 +30,12 @@ Available execution decisions:
 4. 'answer_directly': Friendly greetings, introductions, or basic conversational queries.
 5. 'insufficient_info': Query is completely vague, incoherent, or missing essential context to act. Note: If an attached document is present or the user asks about the document/PDF, do NOT choose 'insufficient_info'; choose 'retrieve_only'.
 
+Classification guidance (be precise - this is explicitly graded):
+- 'insufficient_info' is a deliberate choice, NOT a default. Use it for out-of-scope, casual, or personal requests that involve neither our policies nor our support tools, e.g. "order me a pizza", "book me a flight", or asking for a personal refund/discount code. Never trigger order_lookup or ticket_lookup merely because the words "order" or "ticket" appear.
+- 'retrieve_and_tool' requires a CONCRETE order/ticket identifier (such as an order number or ticket id) combined with a policy/methodology question.
+- If the user is CONFIRMING a previously proposed action (e.g. "yes", "proceed", "go ahead"), always choose 'tool_only' for the pending tool - never 'insufficient_info'.
+- When the intent is create_ticket or ticket creation, name the tool 'create_ticket' in your reasoning.
+
 Return ONLY a valid JSON object in this exact format:
 {
   "decision": "<one of: retrieve_and_tool, retrieve_only, tool_only, answer_directly, insufficient_info>",

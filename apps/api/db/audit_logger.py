@@ -46,6 +46,30 @@ async def record_audit_step(
     return entry
 
 
+async def get_last_pending_action(conversation_id: str) -> Optional[Dict[str, Any]]:
+    """Returns the most recent guardrail_pending record, from MongoDB or the in-memory buffer.
+
+    Used to carry a pending confirmation across turns so the guardrail round-trip
+    does not depend on the database being reachable.
+    """
+    try:
+        db = await get_db()
+        rec = await db.audit_logs.find_one(
+            {"conversation_id": conversation_id, "step_type": "guardrail_pending"},
+            {"_id": 0, "step_detail": 1},
+            sort=[("created_at", -1)]
+        )
+        if rec and rec.get("step_detail"):
+            return rec["step_detail"]
+    except Exception as exc:
+        logger.debug("MongoDB pending action fetch notice: %s", exc)
+
+    for entry in reversed(_MEMORY_AUDIT_LOGS.get(conversation_id, [])):
+        if entry.get("step_type") == "guardrail_pending" and entry.get("step_detail"):
+            return entry["step_detail"]
+    return None
+
+
 async def get_audit_trail(conversation_id: str) -> List[Dict[str, Any]]:
     """Retrieves chronological audit events for a given conversation."""
     try:

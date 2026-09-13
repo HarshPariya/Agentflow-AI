@@ -75,20 +75,24 @@ def fallback_llm_reasoning(prompt: str) -> str:
 
     # 1. Planning decisions matching PLANNER_PROMPT
     if "planning agent" in lower_prompt or "execution strategy" in lower_prompt or "available execution decisions" in lower_prompt or "classify the following query" in lower_prompt:
-        if "refund" in query and ("order" in query or any(char.isdigit() for char in query)):
+        # Out-of-scope / casual personal requests must not trigger enterprise tools (adversarial routing).
+        if any(t in query for t in ["pizza", "flight", "book me", "book a", "order me a", "shopping", "weather"]):
+            return '{"decision": "insufficient_info", "reasoning": "Query is an out-of-scope, casual, or personal request with no enterprise action."}'
+        # Destructive/creation intent: gated by the confirmation guardrail.
+        if "create" in query and "ticket" in query:
+            return '{"decision": "tool_only", "reasoning": "User requested creation of a new ticket via create_ticket (requires confirmation)."}'
+        # Chained: refund/policy lookup combined with a concrete order identifier.
+        if "refund" in query and any(char.isdigit() for char in query):
             return '{"decision": "retrieve_and_tool", "reasoning": "Query requires knowledge base policy lookup for refund terms and live order status lookup."}'
-        elif "create" in query and "ticket" in query:
-            return '{"decision": "tool_only", "reasoning": "User requested creation of a new ticket."}'
-        elif "ticket" in query and ("tik-" in query or "check" in query or "status" in query or any(char.isdigit() for char in query)):
-            return '{"decision": "tool_only", "reasoning": "User is inquiring about an existing support ticket status."}'
-        elif "order" in query and any(char.isdigit() for char in query):
-            return '{"decision": "tool_only", "reasoning": "User is checking an order status."}'
-        elif "policy" in query or "warranty" in query or "return" in query or "pdf" in query or "document" in query or "about" in query:
+        if "ticket" in query and ("tik-" in query or "status" in query or "check" in query or any(char.isdigit() for char in query)):
+            return '{"decision": "tool_only", "reasoning": "User is inquiring about an existing support ticket status via ticket_lookup."}'
+        if "order" in query and any(char.isdigit() for char in query):
+            return '{"decision": "tool_only", "reasoning": "User is checking an order status via order_lookup."}'
+        if any(t in query for t in ["policy", "warranty", "return", "refund", "damaged", "pdf", "document", "what is", "about", "summarize", "explain", "overview"]):
             return '{"decision": "retrieve_only", "reasoning": "Query seeks organizational policy information from the knowledge base."}'
-        elif "hello" in query or "hi" in query or "who are you" in query:
+        if any(t in query for t in ["hello", "hi", "who are you"]):
             return '{"decision": "answer_directly", "reasoning": "Conversational greeting or direct question."}'
-        else:
-            return '{"decision": "insufficient_info", "reasoning": "Query is ambiguous or out-of-domain."}'
+        return '{"decision": "insufficient_info", "reasoning": "Query is ambiguous or out-of-domain."}'
 
     # 2. Tool extraction matching tool_executor prompt
     if "extract tool calls" in lower_prompt or "tool parameter extractor" in lower_prompt or "extract structured arguments" in lower_prompt:
