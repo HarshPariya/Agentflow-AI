@@ -259,6 +259,7 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         loadSessions();
       },
       onError: (err: Error) => {
+        setIsLoading(false);
         const isFetchError = !err.message || err.message.toLowerCase().includes('failed to fetch');
         const errorMessage = isFetchError
           ? `⚠️ **Backend Gateway Offline**: Unable to reach the API server at \`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}\`.\n\n- **On Vercel**: Add **\`NEXT_PUBLIC_API_URL\`** in your Vercel Project Settings under Environment Variables with your deployed backend HTTPS URL.\n- **Local Dev**: Ensure your backend is running (\`npm run backend\`).`
