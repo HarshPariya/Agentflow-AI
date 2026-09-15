@@ -1,0 +1,26 @@
+{
+  "name": "agentflow-ai",
+  "version": "1.0.0",
+  "description": "Ask, Retrieve, Act — Production-Ready Autonomous Enterprise AI Agent",
+  "private": true,
+  "scripts": {
+    "dev": "npm --prefix apps/web run dev",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start",
+    "lint": "npm --prefix apps/web run lint",
+    "backend": "python apps/api/main.py",
+    "mcp": "python mcp-server/server.py",
+    "test": "python -m pytest apps/api/tests mcp-server/tests -v",
+    "test:backend": "python -m pytest apps/api/tests -v",
+    "test:mcp": "python -m pytest mcp-server/tests -v",
+    "eval": "python apps/api/tests/run_eval_harness.py --threshold 0.85"
+  },
+  "keywords": [
+    "langgraph",
+    "fastapi",
+    "nextjs",
+    "mcp",
+    "mongodb-atlas",
+    "rag"
+  ]
+}

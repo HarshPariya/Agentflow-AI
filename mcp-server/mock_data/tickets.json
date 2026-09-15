@@ -1,0 +1,422 @@
+{
+  "TIK-101": {
+    "ticket_id": "TIK-101",
+    "subject": "Firmware update failed on Gateway #2",
+    "description": "Device displays amber blinking LED after 2.4.1 patch.",
+    "status": "in_progress",
+    "priority": "high",
+    "assignee": "Alex Rivera",
+    "last_update": "2026-09-10T11:45:00Z",
+    "created": "2026-09-09T14:20:00Z"
+  },
+  "TIK-102": {
+    "ticket_id": "TIK-102",
+    "subject": "Request for SSO integration documentation",
+    "description": "Enterprise customer asking for SAML 2.0 setup guide.",
+    "status": "resolved",
+    "priority": "normal",
+    "assignee": "Marcus Vance",
+    "last_update": "2026-09-11T09:15:00Z",
+    "created": "2026-09-08T10:00:00Z"
+  },
+  "TIK-103": {
+    "ticket_id": "TIK-103",
+    "subject": "Refund dispute inquiry for cancelled seat",
+    "description": "Customer requests pro-rated credit for unused seat.",
+    "status": "pending_customer",
+    "priority": "medium",
+    "assignee": "Sarah Connor",
+    "last_update": "2026-09-10T16:30:00Z",
+    "created": "2026-09-07T08:30:00Z"
+  },
+  "TIK-A3708C": {
+    "ticket_id": "TIK-A3708C",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T10:16:23.234212+00:00",
+    "created": "2026-09-11T10:16:23.234212+00:00"
+  },
+  "TIK-BF9BE1": {
+    "ticket_id": "TIK-BF9BE1",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T10:27:59.462525+00:00",
+    "created": "2026-09-11T10:27:59.462525+00:00"
+  },
+  "TIK-D72047": {
+    "ticket_id": "TIK-D72047",
+    "subject": "Production database outage",
+    "description": "Urgent: Production database outage affecting services.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T10:49:42.812595+00:00",
+    "created": "2026-09-11T10:49:42.812595+00:00"
+  },
+  "TIK-4CA830": {
+    "ticket_id": "TIK-4CA830",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T10:49:43.733055+00:00",
+    "created": "2026-09-11T10:49:43.733055+00:00"
+  },
+  "TIK-A7F7B9": {
+    "ticket_id": "TIK-A7F7B9",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:34:48.148409+00:00",
+    "created": "2026-09-11T11:34:48.148409+00:00"
+  },
+  "TIK-FE33EB": {
+    "ticket_id": "TIK-FE33EB",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:34:49.347739+00:00",
+    "created": "2026-09-11T11:34:49.347739+00:00"
+  },
+  "TIK-959812": {
+    "ticket_id": "TIK-959812",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:38:35.815657+00:00",
+    "created": "2026-09-11T11:38:35.815657+00:00"
+  },
+  "TIK-656A3B": {
+    "ticket_id": "TIK-656A3B",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:38:36.834372+00:00",
+    "created": "2026-09-11T11:38:36.834372+00:00"
+  },
+  "TIK-E99794": {
+    "ticket_id": "TIK-E99794",
+    "subject": "Database Server Outage",
+    "description": "Database server is down and requires immediate attention.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:40:49.819472+00:00",
+    "created": "2026-09-11T11:40:49.819472+00:00"
+  },
+  "TIK-0C35B6": {
+    "ticket_id": "TIK-0C35B6",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:47:19.495572+00:00",
+    "created": "2026-09-11T11:47:19.495572+00:00"
+  },
+  "TIK-CE611A": {
+    "ticket_id": "TIK-CE611A",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:47:20.495163+00:00",
+    "created": "2026-09-11T11:47:20.495163+00:00"
+  },
+  "TIK-193C80": {
+    "ticket_id": "TIK-193C80",
+    "subject": "Production database outage",
+    "description": "Urgent: Production database outage affecting services.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:53:34.005603+00:00",
+    "created": "2026-09-11T11:53:34.005603+00:00"
+  },
+  "TIK-3A1156": {
+    "ticket_id": "TIK-3A1156",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:53:35.076122+00:00",
+    "created": "2026-09-11T11:53:35.076122+00:00"
+  },
+  "TIK-BF1552": {
+    "ticket_id": "TIK-BF1552",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:55:58.974793+00:00",
+    "created": "2026-09-11T11:55:58.974793+00:00"
+  },
+  "TIK-217E56": {
+    "ticket_id": "TIK-217E56",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T11:56:00.077396+00:00",
+    "created": "2026-09-11T11:56:00.077396+00:00"
+  },
+  "TIK-B8372A": {
+    "ticket_id": "TIK-B8372A",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T12:10:08.073943+00:00",
+    "created": "2026-09-11T12:10:08.073943+00:00"
+  },
+  "TIK-F66336": {
+    "ticket_id": "TIK-F66336",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T12:10:09.177328+00:00",
+    "created": "2026-09-11T12:10:09.177328+00:00"
+  },
+  "TIK-81A5FD": {
+    "ticket_id": "TIK-81A5FD",
+    "subject": "Production database outage",
+    "description": "The production database is currently down, causing service disruption.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T12:32:40.482518+00:00",
+    "created": "2026-09-11T12:32:40.482518+00:00"
+  },
+  "TIK-E00E91": {
+    "ticket_id": "TIK-E00E91",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-11T12:32:41.733809+00:00",
+    "created": "2026-09-11T12:32:41.733809+00:00"
+  },
+  "TIK-F19CFC": {
+    "ticket_id": "TIK-F19CFC",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-13T07:12:59.013593+00:00",
+    "created": "2026-09-13T07:12:59.013593+00:00"
+  },
+  "TIK-D20164": {
+    "ticket_id": "TIK-D20164",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-13T07:27:42.493985+00:00",
+    "created": "2026-09-13T07:27:42.493985+00:00"
+  },
+  "TIK-C8E440": {
+    "ticket_id": "TIK-C8E440",
+    "subject": "Test",
+    "description": "Smoke",
+    "priority": "high",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-13T07:28:45.807897+00:00",
+    "created": "2026-09-13T07:28:45.807897+00:00"
+  },
+  "TIK-0A089B": {
+    "ticket_id": "TIK-0A089B",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-13T07:28:47.275008+00:00",
+    "created": "2026-09-13T07:28:47.275008+00:00"
+  },
+  "TIK-0B21AC": {
+    "ticket_id": "TIK-0B21AC",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-13T07:33:29.472239+00:00",
+    "created": "2026-09-13T07:33:29.472239+00:00"
+  },
+  "TIK-E9D6CD": {
+    "ticket_id": "TIK-E9D6CD",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T05:58:10.895544+00:00",
+    "created": "2026-09-15T05:58:10.895544+00:00"
+  },
+  "TIK-7B4950": {
+    "ticket_id": "TIK-7B4950",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T05:58:17.713637+00:00",
+    "created": "2026-09-15T05:58:17.713637+00:00"
+  },
+  "TIK-30CB0C": {
+    "ticket_id": "TIK-30CB0C",
+    "subject": "Database server outage",
+    "description": "Create an urgent ticket for database server outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:16:18.058957+00:00",
+    "created": "2026-09-15T06:16:18.058957+00:00"
+  },
+  "TIK-574702": {
+    "ticket_id": "TIK-574702",
+    "subject": "Navsari to surat",
+    "description": "Create an urgent ticket for navsari to surat",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:16:49.876928+00:00",
+    "created": "2026-09-15T06:16:49.876928+00:00"
+  },
+  "TIK-0FBB00": {
+    "ticket_id": "TIK-0FBB00",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:54:22.210804+00:00",
+    "created": "2026-09-15T06:54:22.210804+00:00"
+  },
+  "TIK-E41460": {
+    "ticket_id": "TIK-E41460",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:54:23.243000+00:00",
+    "created": "2026-09-15T06:54:23.243000+00:00"
+  },
+  "TIK-0A3FA0": {
+    "ticket_id": "TIK-0A3FA0",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:56:38.655469+00:00",
+    "created": "2026-09-15T06:56:38.655469+00:00"
+  },
+  "TIK-6063BA": {
+    "ticket_id": "TIK-6063BA",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T06:56:40.006394+00:00",
+    "created": "2026-09-15T06:56:40.006394+00:00"
+  },
+  "TIK-E71B65": {
+    "ticket_id": "TIK-E71B65",
+    "subject": "Flight ticket US to Bombay",
+    "description": "Request for flight ticket from US to Bombay",
+    "priority": "normal",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T07:29:57.248750+00:00",
+    "created": "2026-09-15T07:29:57.248750+00:00"
+  },
+  "TIK-EB265B": {
+    "ticket_id": "TIK-EB265B",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T08:45:25.390456+00:00",
+    "created": "2026-09-15T08:45:25.390456+00:00"
+  },
+  "TIK-C5ACE5": {
+    "ticket_id": "TIK-C5ACE5",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T08:45:26.777390+00:00",
+    "created": "2026-09-15T08:45:26.777390+00:00"
+  },
+  "TIK-E07C0F": {
+    "ticket_id": "TIK-E07C0F",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T08:49:36.714183+00:00",
+    "created": "2026-09-15T08:49:36.714183+00:00"
+  },
+  "TIK-28385C": {
+    "ticket_id": "TIK-28385C",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T08:49:37.884485+00:00",
+    "created": "2026-09-15T08:49:37.884485+00:00"
+  },
+  "TIK-4607C0": {
+    "ticket_id": "TIK-4607C0",
+    "subject": "Production database outage",
+    "description": "Create an urgent ticket for production database outage",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T09:22:34.242989+00:00",
+    "created": "2026-09-15T09:22:34.242989+00:00"
+  },
+  "TIK-686A71": {
+    "ticket_id": "TIK-686A71",
+    "subject": "System crash on reboot",
+    "description": "Kernel panic occurred during OS startup sequence.",
+    "priority": "urgent",
+    "status": "open",
+    "assignee": "Triage Bot",
+    "last_update": "2026-09-15T09:22:35.327304+00:00",
+    "created": "2026-09-15T09:22:35.327304+00:00"
+  }
+}
