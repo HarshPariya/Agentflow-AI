@@ -67,6 +67,20 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
   const [attachedDoc, setAttachedDoc] = useState<{ name: string; chunks: number; docId: string } | null>(null);
   const [health, setHealth] = useState<{ status: string; db: string; redis: string; vector_store: string } | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const mobile = typeof window !== 'undefined' && window.innerWidth < 768;
+      setIsMobile(mobile);
+      if (mobile) {
+        setSidebarOpen(false);
+      }
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -110,13 +124,14 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
     setCurrentView('chat');
     setMessages([]);
     setInputMessage('');
-    inputRef.current?.focus();
+    if (isMobile) setSidebarOpen(false);
   };
 
   const handleSelectConversation = async (convId: string) => {
     setIsLoading(true);
     setConversationId(convId);
     setCurrentView('chat');
+    if (isMobile) setSidebarOpen(false);
     try {
       const detail = await fetchConversationDetail(convId);
       if (detail && detail.messages && detail.messages.length > 0) {
@@ -302,11 +317,32 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         onChange={handleFileUpload}
       />
 
-      {/* Clean, Modern Sidebar */}
+      {/* Mobile Drawer Backdrop */}
+      {isMobile && sidebarOpen && (
+        <div
+          onClick={() => setSidebarOpen(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            backgroundColor: 'rgba(15, 23, 42, 0.45)',
+            backdropFilter: 'blur(3px)',
+            WebkitBackdropFilter: 'blur(3px)',
+            zIndex: 40,
+            transition: 'opacity 0.2s ease'
+          }}
+        />
+      )}
+
+      {/* Clean, Modern Sidebar (Responsive Drawer on Mobile) */}
       <aside
         style={{
-          width: sidebarOpen ? '260px' : '0px',
-          minWidth: sidebarOpen ? '260px' : '0px',
+          position: isMobile ? 'fixed' : 'relative',
+          top: 0,
+          left: 0,
+          bottom: 0,
+          width: isMobile ? '280px' : (sidebarOpen ? '260px' : '0px'),
+          minWidth: isMobile ? (sidebarOpen ? '280px' : '0px') : (sidebarOpen ? '260px' : '0px'),
+          transform: isMobile ? (sidebarOpen ? 'translateX(0)' : 'translateX(-100%)') : 'none',
           height: '100%',
           backgroundColor: '#ffffff',
           borderRight: '1px solid #e2e8f0',
@@ -314,8 +350,8 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
           flexDirection: 'column',
           transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
           overflow: 'hidden',
-          zIndex: 30,
-          boxShadow: sidebarOpen ? '4px 0 20px rgba(15, 23, 42, 0.03)' : 'none'
+          zIndex: isMobile ? 50 : 30,
+          boxShadow: sidebarOpen ? '4px 0 24px rgba(15, 23, 42, 0.12)' : 'none'
         }}
       >
         {/* Brand Header */}
@@ -563,32 +599,36 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
       {/* Main Workspace */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
         {/* Top Minimal Navigation Bar */}
-        <header style={{
-          height: '56px',
-          borderBottom: '1px solid #e2e8f0',
-          backgroundColor: '#ffffff',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          padding: '0 24px',
-          flexShrink: 0
-        }}>
+        <header
+          className="responsive-header"
+          style={{
+            height: '56px',
+            borderBottom: '1px solid #e2e8f0',
+            backgroundColor: '#ffffff',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '0 24px',
+            flexShrink: 0
+          }}
+        >
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            {!sidebarOpen && (
+            {(isMobile || !sidebarOpen) && (
               <button
                 onClick={() => setSidebarOpen(true)}
                 style={{
-                  width: '32px',
-                  height: '32px',
-                  borderRadius: '8px',
+                  width: '34px',
+                  height: '34px',
+                  borderRadius: '9px',
                   border: '1px solid #e2e8f0',
                   backgroundColor: '#ffffff',
-                  color: '#475569',
+                  color: '#334155',
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  fontSize: '14px'
+                  fontSize: '16px',
+                  boxShadow: '0 1px 3px rgba(15, 23, 42, 0.05)'
                 }}
                 title="Open Sidebar"
               >
@@ -648,283 +688,294 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         </header>
 
         {/* View Switcher: History vs Chat */}
-        {currentView === 'history' ? (
-          <HistoryView
-            userId={currentUser.user_id}
-            onSelectConversation={handleSelectConversation}
-            onNewChat={handleNewConversation}
-          />
-        ) : (
-          <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100% - 56px)', overflow: 'hidden' }}>
-            {/* Scrollable Message Area */}
-            <div style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '24px 32px',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
-              {/* Clean, intuitive Starter Hero when chat is fresh */}
-              {messages.length === 0 ? (
-                <div style={{
-                  maxWidth: '740px',
-                  margin: 'auto',
-                  width: '100%',
-                  padding: '20px 0',
-                  textAlign: 'center'
-                }}>
-                  {/* Clean Professional Enterprise Icon */}
+        {
+          currentView === 'history' ? (
+            <HistoryView
+              userId={currentUser.user_id}
+              onSelectConversation={handleSelectConversation}
+              onNewChat={handleNewConversation}
+            />
+          ) : (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: 'calc(100% - 56px)', overflow: 'hidden' }}>
+              {/* Scrollable Message Area */}
+              <div
+                className="responsive-chat-container"
+                style={{
+                  flex: 1,
+                  overflowY: 'auto',
+                  padding: '24px 32px',
+                  display: 'flex',
+                  flexDirection: 'column'
+                }}
+              >
+                {/* Clean, intuitive Starter Hero when chat is fresh */}
+                {messages.length === 0 ? (
                   <div style={{
-                    width: '52px',
-                    height: '52px',
-                    borderRadius: '14px',
-                    background: 'linear-gradient(135deg, #1e40af, #2563eb)',
-                    color: '#ffffff',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    margin: '0 auto 18px auto',
-                    boxShadow: '0 8px 24px -4px rgba(30, 64, 175, 0.35)',
-                    border: '1px solid rgba(255, 255, 255, 0.25)'
+                    maxWidth: '740px',
+                    margin: 'auto',
+                    width: '100%',
+                    padding: '20px 0',
+                    textAlign: 'center'
                   }}>
-                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="5" r="3" />
-                      <circle cx="5" cy="19" r="3" />
-                      <circle cx="19" cy="19" r="3" />
-                      <path d="M12 8v4" />
-                      <path d="M7.5 17.5l3-3" />
-                      <path d="M16.5 17.5l-3-3" />
-                      <circle cx="12" cy="13" r="1.5" fill="currentColor" />
-                    </svg>
-                  </div>
-
-                  <h1 style={{
-                    fontSize: '24px',
-                    fontWeight: 800,
-                    color: '#0f172a',
-                    marginBottom: '8px',
-                    letterSpacing: '-0.02em'
-                  }}>
-                    How can I assist you today?
-                  </h1>
-
-                  <p style={{
-                    fontSize: '14px',
-                    color: '#64748b',
-                    maxWidth: '460px',
-                    margin: '0 auto 36px auto',
-                    lineHeight: '1.5'
-                  }}>
-                    Ask questions about company policies, check real-time order status, or manage support tickets.
-                  </p>
-
-                  {/* 2x2 Clean Starter Grid (Clickable immediately) */}
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-                    gap: '12px',
-                    textAlign: 'left'
-                  }}>
-                    {STARTER_PROMPTS.map((item, idx) => (
-                      <button
-                        key={idx}
-                        onClick={() => handleSend(item.prompt)}
-                        style={{
-                          padding: '16px',
-                          borderRadius: '12px',
-                          backgroundColor: '#ffffff',
-                          border: '1px solid #e2e8f0',
-                          cursor: 'pointer',
-                          display: 'flex',
-                          alignItems: 'flex-start',
-                          gap: '12px',
-                          boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
-                          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
-                        }}
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.borderColor = '#93c5fd';
-                          e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(37, 99, 235, 0.1)';
-                          e.currentTarget.style.transform = 'translateY(-1px)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.borderColor = '#e2e8f0';
-                          e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.04)';
-                          e.currentTarget.style.transform = 'none';
-                        }}
-                      >
-                        <span style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px' }}>{item.icon}</span>
-                        <div style={{ flex: 1 }}>
-                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
-                            <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
-                              {item.title}
-                            </span>
-                            <span style={{
-                              fontSize: '10px',
-                              fontWeight: 600,
-                              color: '#2563eb',
-                              backgroundColor: '#eff6ff',
-                              padding: '2px 6px',
-                              borderRadius: '4px'
-                            }}>
-                              {item.badge}
-                            </span>
-                          </div>
-                          <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
-                            {item.subtitle}
-                          </div>
-                        </div>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div style={{ maxWidth: '820px', width: '100%', margin: '0 auto' }}>
-                  {messages.map((m) => (
-                    <MessageBubble
-                      key={m.id}
-                      message={m}
-                      onConfirmAction={handleConfirmAction}
-                    />
-                  ))}
-                  <div ref={messagesEndRef} />
-                </div>
-              )}
-            </div>
-
-            {/* Bottom Input Dock */}
-            <div style={{
-              padding: '16px 32px 24px 32px',
-              backgroundColor: '#ffffff',
-              borderTop: '1px solid #f1f5f9',
-              flexShrink: 0
-            }}>
-              <div style={{ maxWidth: '820px', margin: '0 auto', width: '100%' }}>
-                {/* Attached Document Pill */}
-                {attachedDoc && (
-                  <div style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    padding: '6px 12px',
-                    backgroundColor: '#eff6ff',
-                    border: '1px solid #bfdbfe',
-                    borderRadius: '8px',
-                    marginBottom: '10px',
-                    fontSize: '12px',
-                    color: '#1e40af'
-                  }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                      <span>📄</span>
-                      <span>Attached: <strong>{attachedDoc.name}</strong> ({attachedDoc.chunks} chunks indexed)</span>
+                    {/* Clean Professional Enterprise Icon */}
+                    <div style={{
+                      width: '52px',
+                      height: '52px',
+                      borderRadius: '14px',
+                      background: 'linear-gradient(135deg, #1e40af, #2563eb)',
+                      color: '#ffffff',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      margin: '0 auto 18px auto',
+                      boxShadow: '0 8px 24px -4px rgba(30, 64, 175, 0.35)',
+                      border: '1px solid rgba(255, 255, 255, 0.25)'
+                    }}>
+                      <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="12" cy="5" r="3" />
+                        <circle cx="5" cy="19" r="3" />
+                        <circle cx="19" cy="19" r="3" />
+                        <path d="M12 8v4" />
+                        <path d="M7.5 17.5l3-3" />
+                        <path d="M16.5 17.5l-3-3" />
+                        <circle cx="12" cy="13" r="1.5" fill="currentColor" />
+                      </svg>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setAttachedDoc(null)}
+
+                    <h1 style={{
+                      fontSize: '24px',
+                      fontWeight: 800,
+                      color: '#0f172a',
+                      marginBottom: '8px',
+                      letterSpacing: '-0.02em'
+                    }}>
+                      How can I assist you today?
+                    </h1>
+
+                    <p style={{
+                      fontSize: '14px',
+                      color: '#64748b',
+                      maxWidth: '460px',
+                      margin: '0 auto 36px auto',
+                      lineHeight: '1.5'
+                    }}>
+                      Ask questions about company policies, check real-time order status, or manage support tickets.
+                    </p>
+
+                    {/* 2x2 Clean Starter Grid (Clickable immediately) */}
+                    <div
+                      className="starter-cards-grid"
                       style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#64748b',
-                        fontSize: '14px',
-                        cursor: 'pointer'
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 280px), 1fr))',
+                        gap: '12px',
+                        textAlign: 'left'
                       }}
-                      title="Remove attachment"
                     >
-                      ✕
-                    </button>
+                      {STARTER_PROMPTS.map((item, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => handleSend(item.prompt)}
+                          style={{
+                            padding: '16px',
+                            borderRadius: '12px',
+                            backgroundColor: '#ffffff',
+                            border: '1px solid #e2e8f0',
+                            cursor: 'pointer',
+                            display: 'flex',
+                            alignItems: 'flex-start',
+                            gap: '12px',
+                            boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+                            transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.borderColor = '#93c5fd';
+                            e.currentTarget.style.boxShadow = '0 6px 16px -2px rgba(37, 99, 235, 0.1)';
+                            e.currentTarget.style.transform = 'translateY(-1px)';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.borderColor = '#e2e8f0';
+                            e.currentTarget.style.boxShadow = '0 1px 3px rgba(15, 23, 42, 0.04)';
+                            e.currentTarget.style.transform = 'none';
+                          }}
+                        >
+                          <span style={{ fontSize: '20px', flexShrink: 0, marginTop: '2px' }}>{item.icon}</span>
+                          <div style={{ flex: 1 }}>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '4px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>
+                                {item.title}
+                              </span>
+                              <span style={{
+                                fontSize: '10px',
+                                fontWeight: 600,
+                                color: '#2563eb',
+                                backgroundColor: '#eff6ff',
+                                padding: '2px 6px',
+                                borderRadius: '4px'
+                              }}>
+                                {item.badge}
+                              </span>
+                            </div>
+                            <div style={{ fontSize: '12px', color: '#64748b', lineHeight: '1.4' }}>
+                              {item.subtitle}
+                            </div>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ maxWidth: '820px', width: '100%', margin: '0 auto' }}>
+                    {messages.map((m) => (
+                      <MessageBubble
+                        key={m.id}
+                        message={m}
+                        onConfirmAction={handleConfirmAction}
+                      />
+                    ))}
+                    <div ref={messagesEndRef} />
                   </div>
                 )}
+              </div>
 
-                {/* Main Input Form */}
-                <form
-                  onSubmit={(e) => {
-                    e.preventDefault();
-                    handleSend();
-                  }}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '8px',
-                    backgroundColor: '#ffffff',
-                    borderRadius: '12px',
-                    padding: '6px 8px 6px 12px',
-                    border: '1px solid #cbd5e1',
-                    boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
-                    transition: 'border-color 0.15s ease'
-                  }}
-                >
-                  <button
-                    type="button"
-                    onClick={() => fileInputRef.current?.click()}
-                    disabled={isUploadingDoc || isLoading}
-                    style={{
-                      border: 'none',
-                      background: 'none',
-                      color: isUploadingDoc ? '#2563eb' : '#64748b',
-                      fontSize: '16px',
-                      cursor: isUploadingDoc ? 'wait' : 'pointer',
-                      padding: '4px',
+              {/* Bottom Input Dock */}
+              <div
+                className="responsive-input-bar"
+                style={{
+                  padding: '16px 32px 24px 32px',
+                  backgroundColor: '#ffffff',
+                  borderTop: '1px solid #f1f5f9',
+                  flexShrink: 0
+                }}
+              >
+                <div style={{ maxWidth: '820px', margin: '0 auto', width: '100%' }}>
+                  {/* Attached Document Pill */}
+                  {attachedDoc && (
+                    <div style={{
                       display: 'flex',
                       alignItems: 'center',
-                      justifyContent: 'center'
-                    }}
-                    title="Attach document to knowledge base"
-                  >
-                    📎
-                  </button>
-
-                  <input
-                    ref={inputRef}
-                    type="text"
-                    value={inputMessage}
-                    onChange={(e) => setInputMessage(e.target.value)}
-                    placeholder="Ask about policies, check order status (#4521), or manage support tickets..."
-                    disabled={isLoading}
-                    style={{
-                      flex: 1,
-                      border: 'none',
-                      outline: 'none',
-                      fontSize: '14px',
-                      color: '#0f172a',
-                      backgroundColor: 'transparent'
-                    }}
-                  />
-
-                  <button
-                    type="submit"
-                    disabled={!inputMessage.trim() || isLoading}
-                    style={{
-                      padding: '8px 16px',
+                      justifyContent: 'space-between',
+                      padding: '6px 12px',
+                      backgroundColor: '#eff6ff',
+                      border: '1px solid #bfdbfe',
                       borderRadius: '8px',
-                      border: 'none',
-                      backgroundColor: inputMessage.trim() && !isLoading ? '#2563eb' : '#e2e8f0',
-                      color: inputMessage.trim() && !isLoading ? '#ffffff' : '#94a3b8',
-                      fontSize: '13px',
-                      fontWeight: 600,
-                      cursor: inputMessage.trim() && !isLoading ? 'pointer' : 'default',
+                      marginBottom: '10px',
+                      fontSize: '12px',
+                      color: '#1e40af'
+                    }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <span>📄</span>
+                        <span>Attached: <strong>{attachedDoc.name}</strong> ({attachedDoc.chunks} chunks indexed)</span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setAttachedDoc(null)}
+                        style={{
+                          background: 'none',
+                          border: 'none',
+                          color: '#64748b',
+                          fontSize: '14px',
+                          cursor: 'pointer'
+                        }}
+                        title="Remove attachment"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Main Input Form */}
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      handleSend();
+                    }}
+                    style={{
                       display: 'flex',
                       alignItems: 'center',
-                      gap: '4px',
-                      transition: 'all 0.15s ease'
+                      gap: '8px',
+                      backgroundColor: '#ffffff',
+                      borderRadius: '12px',
+                      padding: '6px 8px 6px 12px',
+                      border: '1px solid #cbd5e1',
+                      boxShadow: '0 2px 8px rgba(15, 23, 42, 0.05)',
+                      transition: 'border-color 0.15s ease'
                     }}
                   >
-                    <span>{isLoading ? 'Thinking...' : 'Send'}</span>
-                    {!isLoading && <span style={{ fontSize: '12px' }}>↑</span>}
-                  </button>
-                </form>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploadingDoc || isLoading}
+                      style={{
+                        border: 'none',
+                        background: 'none',
+                        color: isUploadingDoc ? '#2563eb' : '#64748b',
+                        fontSize: '16px',
+                        cursor: isUploadingDoc ? 'wait' : 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}
+                      title="Attach document to knowledge base"
+                    >
+                      📎
+                    </button>
 
-                <div style={{
-                  textAlign: 'center',
-                  fontSize: '11px',
-                  color: '#94a3b8',
-                  marginTop: '8px'
-                }}>
-                  Agentflow AI answers questions using enterprise knowledge and live operational tools.
+                    <input
+                      ref={inputRef}
+                      type="text"
+                      value={inputMessage}
+                      onChange={(e) => setInputMessage(e.target.value)}
+                      placeholder="Ask about policies, check order status (#4521), or manage support tickets..."
+                      disabled={isLoading}
+                      style={{
+                        flex: 1,
+                        border: 'none',
+                        outline: 'none',
+                        fontSize: '14px',
+                        color: '#0f172a',
+                        backgroundColor: 'transparent'
+                      }}
+                    />
+
+                    <button
+                      type="submit"
+                      disabled={!inputMessage.trim() || isLoading}
+                      style={{
+                        padding: '8px 16px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        backgroundColor: inputMessage.trim() && !isLoading ? '#2563eb' : '#e2e8f0',
+                        color: inputMessage.trim() && !isLoading ? '#ffffff' : '#94a3b8',
+                        fontSize: '13px',
+                        fontWeight: 600,
+                        cursor: inputMessage.trim() && !isLoading ? 'pointer' : 'default',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '4px',
+                        transition: 'all 0.15s ease'
+                      }}
+                    >
+                      <span>{isLoading ? 'Thinking...' : 'Send'}</span>
+                      {!isLoading && <span style={{ fontSize: '12px' }}>↑</span>}
+                    </button>
+                  </form>
+
+                  <div style={{
+                    textAlign: 'center',
+                    fontSize: '11px',
+                    color: '#94a3b8',
+                    marginTop: '8px'
+                  }}>
+                    Agentflow AI answers questions using enterprise knowledge and live operational tools.
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
-      </div>
-    </div>
+          )
+        }
+      </div >
+    </div >
   );
 }

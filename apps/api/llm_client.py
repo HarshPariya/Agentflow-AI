@@ -36,25 +36,34 @@ def clean_llm_response(text: str) -> str:
 
 
 def call_llm(prompt: str, system_prompt: Optional[str] = None) -> str:
-    """Synchronous LLM completion call with fallback."""
+    """Synchronous LLM completion call with primary model and automatic resilient retry."""
     client = get_groq_client()
-    if client and settings.groq_api_key:
-        try:
-            messages = []
-            if system_prompt:
-                messages.append({"role": "system", "content": system_prompt})
-            messages.append({"role": "user", "content": prompt})
+    clean_key = (settings.groq_api_key or "").strip("\"' \t\r\n")
+    if client and clean_key:
+        candidate_models = [settings.llm_model]
+        if "openai/gpt-oss-20b" not in candidate_models:
+            candidate_models.append("openai/gpt-oss-20b")
 
-            resp = client.chat.completions.create(
-                messages=messages,
-                model=settings.llm_model,
-                temperature=0.1,
-                max_tokens=1024
-            )
-            raw_text = resp.choices[0].message.content or ""
-            return clean_llm_response(raw_text)
-        except Exception as exc:
-            logger.warning("Live LLM completion encountered error (%s), using fallback reasoning", exc)
+        messages = []
+        if system_prompt:
+            messages.append({"role": "system", "content": system_prompt})
+        messages.append({"role": "user", "content": prompt})
+
+        for model_name in candidate_models:
+            try:
+                resp = client.chat.completions.create(
+                    messages=messages,
+                    model=model_name,
+                    temperature=0.1,
+                    max_tokens=1024,
+                    timeout=15.0
+                )
+                raw_text = resp.choices[0].message.content or ""
+                cleaned = clean_llm_response(raw_text)
+                if cleaned.strip():
+                    return cleaned
+            except Exception as exc:
+                logger.warning("Live LLM completion attempt with model '%s' failed: %s", model_name, exc)
 
     # Offline deterministic fallback reasoning for testing / offline environments
     return fallback_llm_reasoning(prompt)
@@ -123,6 +132,21 @@ def fallback_llm_reasoning(prompt: str) -> str:
             return "**Policy Summary**\n\n- Returns must be requested within 30 days.\n- Free shipping label provided for damaged items.\n\n*Sources*: [capstone-technical-documentation]"
         elif "ticket" in query:
             return "**Support Ticket Status**\n\nTicket details retrieved successfully.\n\n*Sources*: [ticket_lookup]"
+
+        # If context contains documents or notes, extract key summary points
+        context_match = re.search(r'Context:\s*\n(.*?)(?=\nUser Query:|\nGuidelines:|\Z)', prompt, re.DOTALL)
+        if context_match:
+            ctx_text = context_match.group(1).strip()
+            raw_lines = [l.strip() for l in ctx_text.split("\n") if l.strip() and not l.startswith("[Document:") and not l.startswith("[Tool:")]
+            if raw_lines:
+                clean_points = []
+                for l in raw_lines[:5]:
+                    l_clean = re.sub(r"Metadata:.*?(---|\b)", "", l).strip()
+                    if len(l_clean) > 15:
+                        clean_points.append(f"- {l_clean[:180]}")
+                if clean_points:
+                    points_str = "\n".join(clean_points)
+                    return f"### Summary & Key Points\n\nBased on the attached documentation:\n\n{points_str}\n\n*Sources*: [Attached Document]"
 
     return "I am Agentflow-AI. Based on our policies and live systems, I am here to assist you."
 
