@@ -42,6 +42,11 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=[
+        "https://agentflow-ai-lime.vercel.app",
+        "https://agentflow-ai.vercel.app",
+        "http://localhost:3000"
+    ],
     allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:\d+|https://.*\.loca\.lt|https://.*\.ngrok-free\.app|https://.*\.onrender\.com|https://.*\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],

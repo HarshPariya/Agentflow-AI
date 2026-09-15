@@ -1,6 +1,9 @@
 import { StepEvent, ConversationItem, FullConversationResponse } from '../types/chat';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+export const getApiBaseUrl = (): string => {
+  const url = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+  return url.replace(/\/+$/, '');
+};
 
 export interface StreamChatOptions {
   conversationId: string | null;
@@ -23,7 +26,7 @@ export async function uploadDocumentToRAG(file: File): Promise<{
 }> {
   const formData = new FormData();
   formData.append('file', file);
-  const response = await fetch(`${API_BASE_URL}/rag/upload`, {
+  const response = await fetch(`${getApiBaseUrl()}/rag/upload`, {
     method: 'POST',
     body: formData,
   });
@@ -45,7 +48,7 @@ export async function streamChatQuery({
   onComplete,
 }: StreamChatOptions): Promise<void> {
   try {
-    const response = await fetch(`${API_BASE_URL}/chat`, {
+    const response = await fetch(`${getApiBaseUrl()}/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -101,10 +104,10 @@ export async function streamChatQuery({
         }
       }
     }
-
-    onComplete();
   } catch (error: any) {
     onError(error instanceof Error ? error : new Error(String(error)));
+  } finally {
+    onComplete();
   }
 }
 
@@ -115,7 +118,7 @@ export async function fetchHealthStatus(): Promise<{
   vector_store: string;
 }> {
   try {
-    const res = await fetch(`${API_BASE_URL}/health`);
+    const res = await fetch(`${getApiBaseUrl()}/health`);
     if (!res.ok) throw new Error('Health check failed');
     return await res.json();
   } catch (err) {
@@ -130,7 +133,7 @@ export async function fetchHealthStatus(): Promise<{
 
 export async function fetchConversations(userId?: string): Promise<ConversationItem[]> {
   try {
-    const url = userId ? `${API_BASE_URL}/conversations?user_id=${encodeURIComponent(userId)}` : `${API_BASE_URL}/conversations`;
+    const url = userId ? `${getApiBaseUrl()}/conversations?user_id=${encodeURIComponent(userId)}` : `${getApiBaseUrl()}/conversations`;
     const res = await fetch(url);
     if (!res.ok) return [];
     return await res.json();
@@ -142,7 +145,7 @@ export async function fetchConversations(userId?: string): Promise<ConversationI
 
 export async function fetchConversationDetail(conversationId: string): Promise<FullConversationResponse | null> {
   try {
-    const res = await fetch(`${API_BASE_URL}/conversations/${encodeURIComponent(conversationId)}`);
+    const res = await fetch(`${getApiBaseUrl()}/conversations/${encodeURIComponent(conversationId)}`);
     if (!res.ok) return null;
     return await res.json();
   } catch (err) {
@@ -153,7 +156,7 @@ export async function fetchConversationDetail(conversationId: string): Promise<F
 
 export async function deleteConversation(conversationId: string): Promise<boolean> {
   try {
-    const res = await fetch(`${API_BASE_URL}/conversations/${encodeURIComponent(conversationId)}`, {
+    const res = await fetch(`${getApiBaseUrl()}/conversations/${encodeURIComponent(conversationId)}`, {
       method: 'DELETE',
     });
     return res.ok;
