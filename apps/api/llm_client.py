@@ -17,9 +17,10 @@ _groq_client: Optional[Groq] = None
 
 def get_groq_client() -> Optional[Groq]:
     global _groq_client
-    if _groq_client is None and settings.groq_api_key:
+    clean_key = (settings.groq_api_key or "").strip("\"' \t\r\n")
+    if _groq_client is None and clean_key:
         try:
-            _groq_client = Groq(api_key=settings.groq_api_key)
+            _groq_client = Groq(api_key=clean_key)
         except Exception as exc:
             logger.error("Failed to initialize Groq client: %s", exc)
             _groq_client = None
