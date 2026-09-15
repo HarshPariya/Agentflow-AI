@@ -26,8 +26,9 @@ async def get_db() -> AsyncIOMotorDatabase:
 
     if _db is None or _client_loop != current_loop:
         try:
+            clean_url = (settings.mongo_url or "").strip("\"' \t\r\n")
             _client = AsyncIOMotorClient(
-                settings.mongo_url,
+                clean_url,
                 serverSelectionTimeoutMS=5000,
                 maxPoolSize=50,
                 minPoolSize=5
