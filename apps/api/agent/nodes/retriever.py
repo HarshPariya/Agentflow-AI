@@ -26,6 +26,31 @@ async def retriever_node(state: AgentState) -> Dict[str, Any]:
     chunks = retrieval_res.get("chunks", [])
     cleared = retrieval_res.get("threshold_cleared", False)
 
+    # Fallback safety: If document is attached but raw query missed, pull the attached document's chunks directly
+    if not chunks and attached_doc:
+        from rag.embed import store
+        clean_name = attached_doc.rsplit(".", 1)[0].lower()
+        doc_chunks = [
+            c for c in store.chunks
+            if clean_name in c.get("docId", "").lower()
+            or clean_name in c.get("title", "").lower()
+            or attached_doc.lower() in c.get("filename", "").lower()
+        ]
+        if doc_chunks:
+            chunks = [{
+                "docId": c.get("docId", attached_doc),
+                "text": c.get("text", ""),
+                "score": 0.95,
+                "title": c.get("title", attached_doc),
+                "filename": c.get("filename", attached_doc),
+                "section": c.get("section", "Document Overview")
+            } for c in doc_chunks[:4]]
+            cleared = True
+            logger.info("Retriever recovered %d chunks directly for attached document %s", len(chunks), attached_doc)
+
+    if attached_doc and chunks:
+        cleared = True
+
     logger.info("Retriever found %d chunks (threshold cleared: %s)", len(chunks), cleared)
 
     return {

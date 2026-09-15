@@ -1,4 +1,4 @@
-import { StepEvent, ConversationItem, FullConversationResponse, UserProfile } from '../types/chat';
+import { StepEvent, ConversationItem, FullConversationResponse } from '../types/chat';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
@@ -163,29 +163,3 @@ export async function deleteConversation(conversationId: string): Promise<boolea
   }
 }
 
-export async function syncUserProfile(profile: UserProfile): Promise<UserProfile | null> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/user`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(profile),
-    });
-    if (!res.ok) return null;
-    const data = await res.json();
-    return data.profile || profile;
-  } catch (err) {
-    console.error('Error syncing user profile:', err);
-    return null;
-  }
-}
-
-export async function fetchUserProfile(userId: string): Promise<UserProfile | null> {
-  try {
-    const res = await fetch(`${API_BASE_URL}/auth/user/${encodeURIComponent(userId)}`);
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (err) {
-    console.error('Error fetching user profile:', err);
-    return null;
-  }
-}

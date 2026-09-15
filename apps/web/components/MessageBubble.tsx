@@ -244,21 +244,27 @@ export default function MessageBubble({ message, onConfirmAction }: MessageBubbl
       {/* Assistant Avatar */}
       {!isUser && (
         <div style={{
-          width: '36px',
-          height: '36px',
-          borderRadius: '12px',
-          background: 'linear-gradient(135deg, #1e40af, #4f46e5)',
+          width: '34px',
+          height: '34px',
+          borderRadius: '10px',
+          background: 'linear-gradient(135deg, #1e40af, #2563eb)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           color: '#ffffff',
-          fontWeight: 800,
-          fontSize: '16px',
           flexShrink: 0,
-          boxShadow: '0 4px 14px rgba(37, 99, 235, 0.22)',
+          boxShadow: '0 4px 12px rgba(30, 64, 175, 0.25)',
           border: '1px solid rgba(255, 255, 255, 0.85)'
         }}>
-          ✦
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="5" r="3" />
+            <circle cx="5" cy="19" r="3" />
+            <circle cx="19" cy="19" r="3" />
+            <path d="M12 8v4" />
+            <path d="M7.5 17.5l3-3" />
+            <path d="M16.5 17.5l-3-3" />
+            <circle cx="12" cy="13" r="1.5" fill="currentColor" />
+          </svg>
         </div>
       )}
 

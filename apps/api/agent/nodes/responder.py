@@ -76,10 +76,14 @@ def responder_node(state: AgentState) -> Dict[str, Any]:
     tools_used: List[str] = []
 
     for chunk in chunks:
-        doc_id = chunk.get("docId", "")
+        doc_id = chunk.get("filename") or chunk.get("docId", "")
         if doc_id and doc_id not in sources_used:
             sources_used.append(doc_id)
-        context_lines.append(f"[Policy: {doc_id} - {chunk.get('title', '')}]\n{chunk.get('text', '')}\n")
+        context_lines.append(f"[Document: {doc_id} - {chunk.get('title', '')}]\n{chunk.get('text', '')}\n")
+
+    attached_doc = state.get("attached_doc")
+    if attached_doc and attached_doc not in sources_used:
+        sources_used.insert(0, attached_doc)
 
     for tool in tools:
         tool_name = tool.get("tool", "")
@@ -110,9 +114,11 @@ def responder_node(state: AgentState) -> Dict[str, Any]:
                         f"Order #{out.get('order_id', query)} satisfies the return criteria under company guidelines."
                     )
         elif chunks:
-            fallback_parts.append("### Policy & Documentation Summary\n")
-            for c in chunks[:2]:
-                fallback_parts.append(f"- **{c.get('docId', 'Policy')}**: {c.get('text', '')[:250]}...\n")
+            doc_label = attached_doc or chunks[0].get('title', 'Document')
+            fallback_parts.append(f"### Summary for {doc_label}\n")
+            for c in chunks[:3]:
+                title = c.get('title') or c.get('docId')
+                fallback_parts.append(f"- **{title}**: {c.get('text', '').strip()}\n")
         elif tools:
             fallback_parts.append("### Operational Tool Result\n")
             for t in tools:
@@ -121,7 +127,7 @@ def responder_node(state: AgentState) -> Dict[str, Any]:
             fallback_parts.append(f"I have processed your request regarding: **{query}**.")
 
         if sources_used:
-            fallback_parts.append(f"\n*Referenced policies: {', '.join(sources_used)}*")
+            fallback_parts.append(f"\n*Referenced sources: {', '.join(sources_used)}*")
         answer = "\n".join(fallback_parts)
 
     logger.info("Responder generated final answer (length=%d, sources=%s, tools=%s)", len(answer), sources_used, tools_used)

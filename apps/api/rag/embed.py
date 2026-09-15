@@ -62,56 +62,62 @@ class VectorStore:
     def search(self, query: str, top_k: int = 4, attached_doc: Optional[str] = None) -> List[Dict]:
         """Computes cosine similarity of query vector against all indexed chunks."""
         query_vec = self._embed(query)
-        if not query_vec:
-            return []
-
         query_lower = query.lower().replace("aboute", "about")
         clean_attached = attached_doc.rsplit(".", 1)[0].lower() if attached_doc else ""
 
         # Detect if query asks for a summary or overview of a document
         summary_terms = ["what is", "about", "tell me", "summarize", "summary", "in short", "lines", "overview", "explain", "review", "purpose"]
         is_summary_query = any(term in query_lower for term in summary_terms)
-        doc_mentions = ["pdf", "doc", "document", "file", "attached", "paper"]
+        doc_mentions = ["pdf", "doc", "document", "file", "attached", "paper", "certificate"]
         has_doc_mention = any(m in query_lower for m in doc_mentions) or bool(attached_doc)
 
         scored_chunks: List[Tuple[float, Dict]] = []
         for chunk in self.chunks:
             chunk_doc_id = chunk.get("docId", "").lower()
             chunk_title = chunk.get("title", "").lower()
+            chunk_filename = chunk.get("filename", "").lower()
             chunk_section = chunk.get("section", "").lower()
             chunk_text = f"{chunk.get('title', '')} {chunk.get('section', '')} {chunk.get('text', '')}"
             chunk_vec = self._embed(chunk_text)
             
             # Dot product of normalized vectors = Cosine similarity
-            raw_score = sum(val * chunk_vec.get(k, 0.0) for k, val in query_vec.items())
+            raw_score = sum(val * chunk_vec.get(k, 0.0) for k, val in query_vec.items()) if query_vec else 0.0
             
             # Calibrate sparse cosine score for document retrieval (0.15+ raw -> 0.70-0.95 calibrated)
             calibrated_score = min(0.98, raw_score * 5.5)
 
             # Check if this chunk belongs to the attached or referenced document
             is_target_doc = False
-            if clean_attached and (clean_attached in chunk_doc_id or clean_attached in chunk_title):
-                is_target_doc = True
-            elif not clean_attached and has_doc_mention and ("capstone" in chunk_doc_id or "pdf" in chunk_doc_id or "uploaded documentation" in chunk_section):
+            if clean_attached:
+                if (
+                    clean_attached in chunk_doc_id
+                    or chunk_doc_id in clean_attached
+                    or clean_attached in chunk_title
+                    or chunk_title in clean_attached
+                    or clean_attached in chunk_filename
+                    or (attached_doc and attached_doc.lower() in chunk_filename)
+                ):
+                    is_target_doc = True
+            elif has_doc_mention and ("capstone" in chunk_doc_id or "pdf" in chunk_doc_id or "uploaded documentation" in chunk_section):
                 is_target_doc = True
 
             if is_target_doc:
-                # If asking for summary/overview of the document, prioritize introductory parts in order
+                # If target doc is attached, guarantee high relevance score (0.85-0.96)
+                base_target_score = max(0.85, 0.70 + raw_score * 3.0)
                 if is_summary_query:
                     part_match = re.search(r"part\s+(\d+)", chunk_section)
-                    part_num = int(part_match.group(1)) if part_match else 99
+                    part_num = int(part_match.group(1)) if part_match else 1
                     if part_num == 1 or re.search(r"\bpage 1\b", chunk.get("text", ""), re.I):
-                        calibrated_score = max(calibrated_score, 0.95)
+                        calibrated_score = max(base_target_score, 0.96)
                     elif part_num == 2:
-                        calibrated_score = max(calibrated_score, 0.90)
+                        calibrated_score = max(base_target_score, 0.92)
                     elif part_num == 3:
-                        calibrated_score = max(calibrated_score, 0.85)
-                    elif part_num == 4:
-                        calibrated_score = max(calibrated_score, 0.80)
+                        calibrated_score = max(base_target_score, 0.88)
                     else:
-                        calibrated_score = max(calibrated_score, 0.75)
+                        calibrated_score = max(base_target_score, 0.85)
                 else:
-                    calibrated_score = min(0.98, calibrated_score + 0.30)
+                    # Specific query on attached document
+                    calibrated_score = min(0.98, max(0.86, raw_score * 5.0 + 0.50))
             elif chunk_doc_id in query_lower or "pdf" in query_lower:
                 calibrated_score = min(1.0, calibrated_score + 0.25)
 
@@ -122,6 +128,7 @@ class VectorStore:
                 "text": chunk.get("text", ""),
                 "score": score,
                 "title": chunk.get("title", ""),
+                "filename": chunk.get("filename", ""),
                 "section": chunk.get("section", "")
             }))
 

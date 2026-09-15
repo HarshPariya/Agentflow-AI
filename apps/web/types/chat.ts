@@ -64,6 +64,7 @@ export interface ConversationItem {
   title: string;
   last_message?: string;
   message_count: number;
+  attached_doc?: string;
   created_at: string;
   updated_at: string;
 }
@@ -78,6 +79,7 @@ export interface FullConversationResponse {
     content: string;
     sources_used?: string[];
     tools_used?: string[];
+    attached_doc?: string;
     created_at: string;
   }>;
   steps: Array<{

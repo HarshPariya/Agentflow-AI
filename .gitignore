@@ -25,6 +25,8 @@ out/
 build/
 dist/
 .tsbuildinfo
+*.tsbuildinfo
+**/*.tsbuildinfo
 next-env.d.ts
 
 # Testing & Coverage

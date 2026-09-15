@@ -4,8 +4,8 @@
   /* Tinted Light Luxury Palette (Porcelain & Cool Slate - NOT Stark White) */
   --bg-canvas: #edf2f7;
   --bg-gradient: radial-gradient(at 15% 15%, #dbeafe 0px, transparent 50%),
-    radial-gradient(at 85% 85%, #ede9fe 0px, transparent 50%),
-    linear-gradient(135deg, #eaf0f8 0%, #edf2f7 50%, #e5ecf6 100%);
+    radial-gradient(at 85% 85%, #e0f2fe 0px, transparent 50%),
+    linear-gradient(135deg, #eaf0f8 0%, #edf2f7 50%, #e2e8f0 100%);
 
   --sidebar-bg: rgba(235, 241, 250, 0.88);
   --sidebar-border: rgba(203, 213, 225, 0.7);
@@ -21,7 +21,7 @@
   --primary-glow: rgba(37, 99, 235, 0.16);
 
   --accent-indigo: #4f46e5;
-  --accent-purple: #7c3aed;
+  --accent-cyan: #0284c7;
   --accent-emerald: #059669;
   --accent-amber: #d97706;
   --accent-rose: #e11d48;
@@ -63,16 +63,16 @@ body {
 /* Glassmorphism Panels */
 .glass-panel {
   background: var(--card-glass);
-  backdrop-filter: blur(16px) saturate(180%);
   -webkit-backdrop-filter: blur(16px) saturate(180%);
+  backdrop-filter: blur(16px) saturate(180%);
   border: 1px solid var(--card-border);
   box-shadow: var(--shadow-card);
 }
 
 .glass-card {
   background: var(--card-glass);
-  backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
   border: 1px solid var(--card-border-subtle);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-subtle);
@@ -147,7 +147,7 @@ body {
 }
 
 .shimmer-text {
-  background: linear-gradient(90deg, #1d4ed8 0%, #7c3aed 50%, #1d4ed8 100%);
+  background: linear-gradient(90deg, #1d4ed8 0%, #0284c7 50%, #1d4ed8 100%);
   background-size: 200% auto;
   color: transparent;
   -webkit-background-clip: text;

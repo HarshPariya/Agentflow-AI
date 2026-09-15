@@ -47,36 +47,44 @@ async def chat_endpoint(req: ChatRequest):
 
     # 1. Record incoming user message in MongoDB and update conversation
     try:
-        await db.messages.insert_one({
+        user_msg_doc = {
             "id": user_message_id,
             "conversation_id": conversation_id,
             "user_id": user_id,
             "role": "user",
             "content": req.message,
             "created_at": now_iso
-        })
+        }
+        if req.attached_doc:
+            user_msg_doc["attached_doc"] = req.attached_doc
+
+        await db.messages.insert_one(user_msg_doc)
 
         # Generate concise conversation title if not yet existing
         title = req.message.strip()[:40]
         if len(req.message.strip()) > 40:
             title += "..."
 
+        conv_update = {
+            "$setOnInsert": {
+                "id": conversation_id,
+                "user_id": user_id,
+                "user_name": user_name,
+                "title": title,
+                "created_at": now_iso
+            },
+            "$set": {
+                "updated_at": now_iso,
+                "last_message": req.message
+            },
+            "$inc": {"message_count": 1}
+        }
+        if req.attached_doc:
+            conv_update["$set"]["attached_doc"] = req.attached_doc
+
         await db.conversations.update_one(
             {"id": conversation_id},
-            {
-                "$setOnInsert": {
-                    "id": conversation_id,
-                    "user_id": user_id,
-                    "user_name": user_name,
-                    "title": title,
-                    "created_at": now_iso
-                },
-                "$set": {
-                    "updated_at": now_iso,
-                    "last_message": req.message
-                },
-                "$inc": {"message_count": 1}
-            },
+            conv_update,
             upsert=True
         )
     except Exception as exc:
@@ -245,7 +253,7 @@ async def chat_endpoint(req: ChatRequest):
         # Record assistant reply message in MongoDB
         try:
             reply_now = datetime.now(timezone.utc).isoformat()
-            await db.messages.insert_one({
+            asst_msg_doc = {
                 "id": assistant_message_id,
                 "conversation_id": conversation_id,
                 "user_id": user_id,
@@ -254,14 +262,23 @@ async def chat_endpoint(req: ChatRequest):
                 "sources_used": sources_used,
                 "tools_used": tools_used,
                 "created_at": reply_now
-            })
+            }
+            if req.attached_doc:
+                asst_msg_doc["attached_doc"] = req.attached_doc
+
+            await db.messages.insert_one(asst_msg_doc)
+            
+            conv_set = {
+                "updated_at": reply_now,
+                "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content
+            }
+            if req.attached_doc:
+                conv_set["attached_doc"] = req.attached_doc
+
             await db.conversations.update_one(
                 {"id": conversation_id},
                 {
-                    "$set": {
-                        "updated_at": reply_now,
-                        "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content
-                    },
+                    "$set": conv_set,
                     "$inc": {"message_count": 1}
                 }
             )
@@ -269,6 +286,6 @@ async def chat_endpoint(req: ChatRequest):
             logger.warning("MongoDB message insert notice: %s", exc)
 
         # Stream final event to frontend
-        yield f"data: {json.dumps({'type': 'final', 'conversation_id': conversation_id, 'content': final_content, 'sources_used': sources_used, 'tools_used': tools_used})}\n\n"
+        yield f"data: {json.dumps({'type': 'final', 'conversation_id': conversation_id, 'content': final_content, 'sources_used': sources_used, 'tools_used': tools_used, 'attached_doc': req.attached_doc})}\n\n"
 
     return StreamingResponse(event_stream(), media_type="text/event-stream")

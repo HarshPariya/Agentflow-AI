@@ -14,16 +14,17 @@ from config import settings
 
 logger = logging.getLogger("mcp_client")
 
-# Dynamically add mcp-server root to path for in-process fallback
+# Dynamically add mcp-server directory to sys.path for in-process fallback
 MCP_DIR = Path(__file__).resolve().parent.parent.parent.parent / "mcp-server"
 if str(MCP_DIR) not in sys.path:
     sys.path.insert(0, str(MCP_DIR))
 
 try:
-    from tools.order_lookup import execute_order_lookup
-    from tools.ticket_lookup import execute_ticket_lookup
-    from tools.create_ticket import execute_create_ticket
-    IN_PROCESS_TOOLS = {
+    from tools.order_lookup import execute_order_lookup  # type: ignore
+    from tools.ticket_lookup import execute_ticket_lookup  # type: ignore
+    from tools.create_ticket import execute_create_ticket  # type: ignore
+
+    IN_PROCESS_TOOLS: Dict[str, Any] = {
         "order_lookup": execute_order_lookup,
         "ticket_lookup": execute_ticket_lookup,
         "create_ticket": execute_create_ticket,
