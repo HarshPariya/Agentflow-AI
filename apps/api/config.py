@@ -4,7 +4,7 @@ Zero hardcoding: all settings loaded from environment or .env file.
 """
 from pathlib import Path
 from pydantic_settings import BaseSettings, SettingsConfigDict
-from pydantic import Field
+from pydantic import Field, AliasChoices
 
 ENV_PATH = Path(__file__).resolve().parent / ".env"
 
@@ -57,7 +57,7 @@ class Settings(BaseSettings):
     # LLM Configuration
     groq_api_key: str = Field(
         default="",
-        validation_alias="GROQ_API_KEY"
+        validation_alias=AliasChoices("GROQ_API_KEY", "LLM_API_KEY")
     )
     llm_model: str = Field(
         default="openai/gpt-oss-20b",

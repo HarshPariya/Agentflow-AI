@@ -3,6 +3,7 @@ Admin Route for Knowledge Base Reindexing
 Protected with X-API-Key header as per Section 9 of Capstone Documentation.
 """
 from __future__ import annotations
+from typing import Optional
 from fastapi import APIRouter, Header, HTTPException, status
 
 from config import settings
@@ -13,7 +14,7 @@ router = APIRouter(prefix="/admin", tags=["Admin"])
 
 
 @router.post("/reindex", response_model=AdminReindexResponse)
-def reindex_knowledge_base(x_api_key: str = Header(None, alias="X-API-Key")):
+def reindex_knowledge_base(x_api_key: Optional[str] = Header(default=None, alias="X-API-Key")):
     """
     Triggers document reindexing. Protected with X-API-Key.
     """
