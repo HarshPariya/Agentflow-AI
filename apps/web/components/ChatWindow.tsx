@@ -136,7 +136,7 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         setMessages(loaded);
 
         // Restore attached document context if this conversation had one
-        const activeDoc = detail.conversation?.attached_doc || 
+        const activeDoc = detail.conversation?.attached_doc ||
           detail.messages.find((m: any) => m.attached_doc)?.attached_doc;
         if (activeDoc) {
           setAttachedDoc({ name: activeDoc, chunks: 1, docId: activeDoc.replace(/\.[^/.]+$/, "") });
@@ -259,12 +259,16 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         loadSessions();
       },
       onError: (err: Error) => {
+        const isFetchError = !err.message || err.message.toLowerCase().includes('failed to fetch');
+        const errorMessage = isFetchError
+          ? `⚠️ **Backend Gateway Offline**: Unable to reach the API server at \`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}\`.\n\n- **On Vercel**: Add **\`NEXT_PUBLIC_API_URL\`** in your Vercel Project Settings under Environment Variables with your deployed backend HTTPS URL.\n- **Local Dev**: Ensure your backend is running (\`npm run backend\`).`
+          : `⚠️ **Service Notice**: ${err.message}`;
         setMessages((prev) =>
           prev.map((msg) => {
             if (msg.id === assistantMsgId) {
               return {
                 ...msg,
-                content: `⚠️ **Service Notice**: ${err.message || 'Unable to connect to the backend gateway. Please check that the server is running.'}`,
+                content: errorMessage,
                 isStreaming: false
               };
             }

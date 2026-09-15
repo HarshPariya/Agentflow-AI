@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: agentflow-ai-backend
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "pip install -r apps/api/requirements.txt -r mcp-server/requirements.txt"
+    startCommand: "python apps/api/main.py"
+    envVars:
+      - key: PORT
+        value: 8000
+      - key: MONGO_URL
+        sync: false
+      - key: LLM_API_KEY
+        sync: false
+      - key: LLM_MODEL
+        value: llama-3.3-70b-versatile

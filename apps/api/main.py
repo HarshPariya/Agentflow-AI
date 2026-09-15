@@ -42,7 +42,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origin_regex=r"https://.*\.vercel\.app|http://localhost:\d+|https://.*\.loca\.lt|https://.*\.ngrok-free\.app|https://.*\.onrender\.com|https://.*\.railway\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -80,4 +80,7 @@ async def upload_document(file: UploadFile = File(...)):
     return result
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    reload = os.environ.get("ENV", "development").lower() != "production"
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=reload)
