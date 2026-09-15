@@ -21,6 +21,7 @@ from agent.nodes.clarify import clarify_node
 from db.audit_logger import record_audit_step, get_last_pending_action
 from db.mongo import get_db
 from agent_types.api import ChatRequest
+from routes.conversations import save_memory_conversation, save_memory_message, save_memory_audit
 
 logger = logging.getLogger("chat_route")
 router = APIRouter(tags=["Chat"])
@@ -59,6 +60,7 @@ async def chat_endpoint(req: ChatRequest):
             user_msg_doc["attached_doc"] = req.attached_doc
 
         await db.messages.insert_one(user_msg_doc)
+        save_memory_message(user_msg_doc)
 
         # Generate concise conversation title if not yet existing
         title = req.message.strip()[:40]
@@ -81,6 +83,17 @@ async def chat_endpoint(req: ChatRequest):
         }
         if req.attached_doc:
             conv_update["$set"]["attached_doc"] = req.attached_doc
+
+        save_memory_conversation({
+            "id": conversation_id,
+            "user_id": user_id,
+            "user_name": user_name,
+            "title": title,
+            "created_at": now_iso,
+            "updated_at": now_iso,
+            "last_message": req.message,
+            "attached_doc": req.attached_doc
+        })
 
         await db.conversations.update_one(
             {"id": conversation_id},
@@ -267,6 +280,7 @@ async def chat_endpoint(req: ChatRequest):
                 asst_msg_doc["attached_doc"] = req.attached_doc
 
             await db.messages.insert_one(asst_msg_doc)
+            save_memory_message(asst_msg_doc)
             
             conv_set = {
                 "updated_at": reply_now,
@@ -274,6 +288,13 @@ async def chat_endpoint(req: ChatRequest):
             }
             if req.attached_doc:
                 conv_set["attached_doc"] = req.attached_doc
+
+            save_memory_conversation({
+                "id": conversation_id,
+                "updated_at": reply_now,
+                "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content,
+                "attached_doc": req.attached_doc
+            })
 
             await db.conversations.update_one(
                 {"id": conversation_id},

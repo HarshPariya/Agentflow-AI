@@ -19,7 +19,13 @@ export default function HistoryView({ userId, onSelectConversation, onNewChat }:
   const loadHistory = async () => {
     setIsLoading(true);
     try {
-      const data = await fetchConversations(userId);
+      const timeoutFallback = new Promise<ConversationItem[]>((resolve) =>
+        setTimeout(() => resolve([]), 3500)
+      );
+      const data = await Promise.race([
+        fetchConversations(userId),
+        timeoutFallback
+      ]);
       setConversations(data);
     } catch (err) {
       console.error('Failed to load conversation history:', err);

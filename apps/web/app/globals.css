@@ -208,3 +208,49 @@ body {
   font-family: 'JetBrains Mono', monospace;
   font-size: 12px;
 }
+
+/* ==========================================================================
+   Responsive Multi-Device Styling (Mobile, Tablet, Mac & Desktop)
+   ========================================================================== */
+@media (max-width: 768px) {
+  .mobile-hide {
+    display: none !important;
+  }
+
+  .mobile-stack {
+    flex-direction: column !important;
+    align-items: stretch !important;
+  }
+
+  .starter-cards-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+
+  .responsive-chat-container {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+
+  .responsive-input-bar {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+    padding-bottom: 10px !important;
+  }
+
+  .responsive-header {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .prose-content {
+    font-size: 13.5px !important;
+    line-height: 1.55 !important;
+  }
+}
+
+@media (min-width: 769px) and (max-width: 1024px) {
+  .starter-cards-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+}
