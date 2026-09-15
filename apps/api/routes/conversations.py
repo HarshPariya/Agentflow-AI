@@ -3,6 +3,7 @@ Conversation and User Profile Management Routes
 Handles multi-session history, conversation resumption, and user profile syncing in MongoDB Atlas.
 """
 from __future__ import annotations
+import asyncio
 from datetime import datetime, timezone
 import logging
 from typing import Any, Dict, List, Optional
