@@ -363,14 +363,16 @@ export default function MessageBubble({ message, onConfirmAction }: MessageBubbl
               fontSize: '13px'
             }}>
               <span
+                className="spinner"
                 style={{
                   display: 'inline-block',
                   width: '14px',
                   height: '14px',
-                  border: '2px solid #cbd5e1',
+                  border: '2px solid rgba(37, 99, 235, 0.2)',
                   borderTopColor: '#2563eb',
                   borderRadius: '50%',
-                  animation: 'spin 1s linear infinite'
+                  animation: 'spin 0.8s linear infinite',
+                  WebkitAnimation: 'spin 0.8s linear infinite'
                 }}
               />
               <span style={{ fontWeight: 500 }}>

@@ -38,6 +38,7 @@ coverage/
 
 # Logs & Database runtime caches
 *.log
+apps/api/data/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*

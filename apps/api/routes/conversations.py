@@ -16,10 +16,46 @@ logger = logging.getLogger("conversations_router")
 router = APIRouter(tags=["Conversations & Auth"])
 
 
+import json
+import os
+
 # Resilient in-memory storage for instantaneous retrieval and network isolation fallback
 _memory_conversations: Dict[str, Dict[str, Any]] = {}
 _memory_messages: Dict[str, List[Dict[str, Any]]] = {}
 _memory_audits: Dict[str, List[Dict[str, Any]]] = {}
+
+CACHE_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+CACHE_FILE = os.path.join(CACHE_DIR, "sessions_cache.json")
+
+
+def _load_cache_from_disk() -> None:
+    global _memory_conversations, _memory_messages, _memory_audits
+    try:
+        if os.path.exists(CACHE_FILE):
+            with open(CACHE_FILE, "r", encoding="utf-8") as f:
+                cached = json.load(f)
+                if isinstance(cached, dict):
+                    _memory_conversations = cached.get("conversations", {})
+                    _memory_messages = cached.get("messages", {})
+                    _memory_audits = cached.get("audits", {})
+    except Exception as exc:
+        logger.debug("Disk cache load notice: %s", exc)
+
+
+def _save_cache_to_disk() -> None:
+    try:
+        os.makedirs(CACHE_DIR, exist_ok=True)
+        with open(CACHE_FILE, "w", encoding="utf-8") as f:
+            json.dump({
+                "conversations": _memory_conversations,
+                "messages": _memory_messages,
+                "audits": _memory_audits
+            }, f)
+    except Exception as exc:
+        logger.debug("Disk cache save notice: %s", exc)
+
+
+_load_cache_from_disk()
 
 
 def save_memory_conversation(conv_data: Dict[str, Any]) -> None:
@@ -27,6 +63,7 @@ def save_memory_conversation(conv_data: Dict[str, Any]) -> None:
     if conv_id:
         existing = _memory_conversations.get(conv_id, {})
         _memory_conversations[conv_id] = {**existing, **conv_data}
+        _save_cache_to_disk()
 
 
 def save_memory_message(msg_data: Dict[str, Any]) -> None:
@@ -38,6 +75,7 @@ def save_memory_message(msg_data: Dict[str, Any]) -> None:
         existing_ids = {m.get("id") for m in _memory_messages[conv_id]}
         if msg_data.get("id") not in existing_ids:
             _memory_messages[conv_id].append(msg_data)
+            _save_cache_to_disk()
 
 
 def save_memory_audit(conv_id: str, audit_data: Dict[str, Any]) -> None:
@@ -45,6 +83,12 @@ def save_memory_audit(conv_id: str, audit_data: Dict[str, Any]) -> None:
         if conv_id not in _memory_audits:
             _memory_audits[conv_id] = []
         _memory_audits[conv_id].append(audit_data)
+        _save_cache_to_disk()
+
+
+def get_memory_messages(conv_id: str) -> List[Dict[str, Any]]:
+    return list(_memory_messages.get(conv_id, []))
+
 
 
 @router.get("/conversations")

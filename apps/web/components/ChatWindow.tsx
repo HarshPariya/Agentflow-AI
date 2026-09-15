@@ -11,6 +11,12 @@ import {
   fetchConversations,
   fetchConversationDetail,
 } from '../lib/api';
+import {
+  getLocalSessions,
+  saveLocalSession,
+  getLocalConversationData,
+  saveLocalConversationData
+} from '../lib/storage';
 
 const STARTER_PROMPTS = [
   {
@@ -58,7 +64,7 @@ interface ChatWindowProps {
 export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
   const [currentView, setCurrentView] = useState<'chat' | 'history'>(initialView);
   const [currentUser] = useState<UserProfile>(DEFAULT_USER);
-  const [recentSessions, setRecentSessions] = useState<ConversationItem[]>([]);
+  const [recentSessions, setRecentSessions] = useState<ConversationItem[]>(() => getLocalSessions().slice(0, 10));
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputMessage, setInputMessage] = useState('');
   const [conversationId, setConversationId] = useState<string>(() => `conv-${Date.now()}`);
@@ -99,13 +105,35 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
     return () => clearInterval(interval);
   }, []);
 
-  // Fetch recent conversation history
+  // Fetch recent conversation history (Local storage first, then backend sync)
   const loadSessions = async () => {
+    const local = getLocalSessions();
+    if (local.length > 0) {
+      setRecentSessions(local.slice(0, 10));
+    }
     try {
-      const data = await fetchConversations(currentUser.user_id);
-      setRecentSessions(data.slice(0, 10));
+      const timeoutFallback = new Promise<ConversationItem[]>((resolve) =>
+        setTimeout(() => resolve([]), 2500)
+      );
+      const data = await Promise.race([
+        fetchConversations(currentUser.user_id),
+        timeoutFallback
+      ]);
+
+      if (data && data.length > 0) {
+        const seen = new Set<string>();
+        const merged: ConversationItem[] = [];
+        for (const item of [...data, ...local]) {
+          if (item.id && !seen.has(item.id)) {
+            seen.add(item.id);
+            merged.push(item);
+            saveLocalSession(item);
+          }
+        }
+        setRecentSessions(merged.slice(0, 10));
+      }
     } catch (e) {
-      console.error('Failed to load conversations:', e);
+      console.warn('Conversations load notice:', e);
     }
   };
 
@@ -132,6 +160,15 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
     setConversationId(convId);
     setCurrentView('chat');
     if (isMobile) setSidebarOpen(false);
+
+    // 1. Instant local restore (0ms delay)
+    const localData = getLocalConversationData(convId);
+    if (localData && localData.messages && localData.messages.length > 0) {
+      setMessages(localData.messages);
+      if (localData.attachedDoc) setAttachedDoc(localData.attachedDoc);
+      setIsLoading(false);
+    }
+
     try {
       const detail = await fetchConversationDetail(convId);
       if (detail && detail.messages && detail.messages.length > 0) {
@@ -155,15 +192,22 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
           detail.messages.find((m: any) => m.attached_doc)?.attached_doc;
         if (activeDoc) {
           setAttachedDoc({ name: activeDoc, chunks: 1, docId: activeDoc.replace(/\.[^/.]+$/, "") });
-        } else {
+        } else if (!localData?.attachedDoc) {
           setAttachedDoc(null);
         }
-      } else {
+
+        saveLocalConversationData(convId, {
+          conversation: detail.conversation,
+          messages: loaded,
+          steps: detail.steps,
+          attachedDoc: activeDoc ? { name: activeDoc, chunks: 1, docId: activeDoc.replace(/\.[^/.]+$/, "") } : null
+        });
+      } else if (!localData) {
         setMessages([]);
         setAttachedDoc(null);
       }
     } catch (err) {
-      console.error('Failed to load conversation:', err);
+      console.warn('Backend conversation detail notice:', err);
     } finally {
       setIsLoading(false);
     }
@@ -227,6 +271,25 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
     setMessages((prev) => [...prev, userMessage, initialAssistantMessage]);
     setIsLoading(true);
 
+    // Save session item to local storage immediately so sidebar updates at 0ms
+    const immediateSessionItem: ConversationItem = {
+      id: conversationId,
+      user_id: currentUser.user_id,
+      title: query.length > 35 ? query.slice(0, 35) + '...' : query,
+      last_message: query,
+      message_count: messages.length + 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      attached_doc: attachedDoc?.name
+    };
+    saveLocalSession(immediateSessionItem);
+    setRecentSessions((prev) => [immediateSessionItem, ...prev.filter((s) => s.id !== conversationId)].slice(0, 10));
+    saveLocalConversationData(conversationId, {
+      conversation: immediateSessionItem,
+      messages: [...messages, userMessage],
+      attachedDoc: attachedDoc
+    });
+
     const activeSteps: StepEvent[] = [];
 
     await streamChatQuery({
@@ -252,25 +315,46 @@ export default function ChatWindow({ initialView = 'chat' }: ChatWindowProps) {
         );
       },
       onFinal: (finalContent: string, sources: string[], tools: string[], serverConvId?: string) => {
+        const targetConvId = serverConvId || conversationId;
         if (serverConvId) {
           setConversationId(serverConvId);
         }
+        const finalAsstMessage: Message = {
+          id: assistantMsgId,
+          role: 'assistant',
+          content: finalContent,
+          createdAt: new Date().toISOString(),
+          sources_used: sources,
+          tools_used: tools,
+          steps: [...activeSteps],
+          isStreaming: false,
+          needsClarification: finalContent.toLowerCase().includes('could you') || finalContent.toLowerCase().includes('please provide')
+        };
+
         setMessages((prev) =>
-          prev.map((msg) => {
-            if (msg.id === assistantMsgId) {
-              return {
-                ...msg,
-                content: finalContent,
-                sources_used: sources,
-                tools_used: tools,
-                steps: [...activeSteps],
-                isStreaming: false,
-                needsClarification: finalContent.toLowerCase().includes('could you') || finalContent.toLowerCase().includes('please provide')
-              };
-            }
-            return msg;
-          })
+          prev.map((msg) => (msg.id === assistantMsgId ? finalAsstMessage : msg))
         );
+
+        // Update local session with final response
+        const updatedSessionItem: ConversationItem = {
+          id: targetConvId,
+          user_id: currentUser.user_id,
+          title: query.length > 35 ? query.slice(0, 35) + '...' : query,
+          last_message: finalContent.length > 70 ? finalContent.slice(0, 70) + '...' : finalContent,
+          message_count: messages.length + 2,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          attached_doc: attachedDoc?.name
+        };
+        saveLocalSession(updatedSessionItem);
+        setRecentSessions((prev) => [updatedSessionItem, ...prev.filter((s) => s.id !== targetConvId)].slice(0, 10));
+        saveLocalConversationData(targetConvId, {
+          conversation: updatedSessionItem,
+          messages: [...messages, userMessage, finalAsstMessage],
+          steps: [...activeSteps],
+          attachedDoc: attachedDoc
+        });
+
         loadSessions();
       },
       onError: (err: Error) => {
