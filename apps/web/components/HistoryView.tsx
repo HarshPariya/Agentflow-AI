@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { ConversationItem } from '../types/chat';
 import { fetchConversations, deleteConversation } from '../lib/api';
+import { getLocalSessions, deleteLocalSession, saveLocalSession } from '../lib/storage';
 
 interface HistoryViewProps {
   userId?: string;
@@ -11,24 +12,48 @@ interface HistoryViewProps {
 }
 
 export default function HistoryView({ userId, onSelectConversation, onNewChat }: HistoryViewProps) {
-  const [conversations, setConversations] = useState<ConversationItem[]>([]);
+  const [conversations, setConversations] = useState<ConversationItem[]>(() => getLocalSessions());
   const [searchQuery, setSearchQuery] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(() => getLocalSessions().length === 0);
   const [deletingId, setDeletingId] = useState<string | null>(null);
 
   const loadHistory = async () => {
-    setIsLoading(true);
+    // 1. Instantly populate from local storage so user never waits
+    const local = getLocalSessions();
+    if (local.length > 0) {
+      setConversations(local);
+      setIsLoading(false);
+    }
+
     try {
       const timeoutFallback = new Promise<ConversationItem[]>((resolve) =>
-        setTimeout(() => resolve([]), 3500)
+        setTimeout(() => resolve([]), 2500)
       );
       const data = await Promise.race([
         fetchConversations(userId),
         timeoutFallback
       ]);
-      setConversations(data);
+
+      if (data && data.length > 0) {
+        // Merge backend data with local storage
+        const seen = new Set<string>();
+        const merged: ConversationItem[] = [];
+        for (const item of [...data, ...local]) {
+          if (item.id && !seen.has(item.id)) {
+            seen.add(item.id);
+            merged.push(item);
+            saveLocalSession(item);
+          }
+        }
+        setConversations(merged);
+      } else if (local.length > 0) {
+        setConversations(local);
+      }
     } catch (err) {
-      console.error('Failed to load conversation history:', err);
+      console.warn('Backend history sync notice:', err);
+      if (local.length > 0) {
+        setConversations(local);
+      }
     } finally {
       setIsLoading(false);
     }
@@ -42,11 +67,12 @@ export default function HistoryView({ userId, onSelectConversation, onNewChat }:
     e.stopPropagation();
     if (!confirm('Are you sure you want to delete this session history and its audit logs?')) return;
     setDeletingId(id);
+    deleteLocalSession(id);
+    setConversations((prev) => prev.filter((c) => c.id !== id));
     try {
       await deleteConversation(id);
-      setConversations((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
-      alert('Failed to delete session');
+      console.warn('Backend delete notice:', err);
     } finally {
       setDeletingId(null);
     }
@@ -390,15 +416,19 @@ export default function HistoryView({ userId, onSelectConversation, onNewChat }:
             alignItems: 'center',
             gap: '12px'
           }}>
-            <div style={{
-              width: '28px',
-              height: '28px',
-              borderRadius: '50%',
-              border: '3px solid #bfdbfe',
-              borderTopColor: '#2563eb',
-              animation: 'spin 0.8s linear infinite'
-            }} />
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>Loading sessions from MongoDB Atlas...</span>
+            <div
+              className="spinner"
+              style={{
+                width: '32px',
+                height: '32px',
+                borderRadius: '50%',
+                border: '3px solid rgba(37, 99, 235, 0.2)',
+                borderTopColor: '#2563eb',
+                animation: 'spin 0.8s linear infinite',
+                WebkitAnimation: 'spin 0.8s linear infinite'
+              }}
+            />
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#475569' }}>Synchronizing sessions with MongoDB Atlas...</span>
           </div>
         ) : filtered.length === 0 ? (
           <div style={{

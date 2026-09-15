@@ -21,7 +21,7 @@ from agent.nodes.clarify import clarify_node
 from db.audit_logger import record_audit_step, get_last_pending_action
 from db.mongo import get_db
 from agent_types.api import ChatRequest
-from routes.conversations import save_memory_conversation, save_memory_message, save_memory_audit
+from routes.conversations import save_memory_conversation, save_memory_message, save_memory_audit, get_memory_messages
 
 logger = logging.getLogger("chat_route")
 router = APIRouter(tags=["Chat"])
@@ -47,26 +47,37 @@ async def chat_endpoint(req: ChatRequest):
     db = await get_db()
 
     # 1. Record incoming user message in MongoDB and update conversation
+    user_msg_doc = {
+        "id": user_message_id,
+        "conversation_id": conversation_id,
+        "user_id": user_id,
+        "role": "user",
+        "content": req.message,
+        "created_at": now_iso
+    }
+    if req.attached_doc:
+        user_msg_doc["attached_doc"] = req.attached_doc
+
+    # Generate concise conversation title if not yet existing
+    title = req.message.strip()[:40]
+    if len(req.message.strip()) > 40:
+        title += "..."
+
+    # Always persist in fast disk-backed memory first (zero latency)
+    save_memory_message(user_msg_doc)
+    save_memory_conversation({
+        "id": conversation_id,
+        "user_id": user_id,
+        "user_name": user_name,
+        "title": title,
+        "created_at": now_iso,
+        "updated_at": now_iso,
+        "last_message": req.message,
+        "attached_doc": req.attached_doc
+    })
+
+    # 1. Record incoming user message in MongoDB and update conversation
     try:
-        user_msg_doc = {
-            "id": user_message_id,
-            "conversation_id": conversation_id,
-            "user_id": user_id,
-            "role": "user",
-            "content": req.message,
-            "created_at": now_iso
-        }
-        if req.attached_doc:
-            user_msg_doc["attached_doc"] = req.attached_doc
-
-        await db.messages.insert_one(user_msg_doc)
-        save_memory_message(user_msg_doc)
-
-        # Generate concise conversation title if not yet existing
-        title = req.message.strip()[:40]
-        if len(req.message.strip()) > 40:
-            title += "..."
-
         conv_update = {
             "$setOnInsert": {
                 "id": conversation_id,
@@ -84,17 +95,7 @@ async def chat_endpoint(req: ChatRequest):
         if req.attached_doc:
             conv_update["$set"]["attached_doc"] = req.attached_doc
 
-        save_memory_conversation({
-            "id": conversation_id,
-            "user_id": user_id,
-            "user_name": user_name,
-            "title": title,
-            "created_at": now_iso,
-            "updated_at": now_iso,
-            "last_message": req.message,
-            "attached_doc": req.attached_doc
-        })
-
+        await db.messages.insert_one(user_msg_doc)
         await db.conversations.update_one(
             {"id": conversation_id},
             conv_update,
@@ -103,7 +104,7 @@ async def chat_endpoint(req: ChatRequest):
     except Exception as exc:
         logger.warning("MongoDB message/conversation insert notice: %s", exc)
 
-    # 2. Fetch recent conversation history from MongoDB
+    # 2. Fetch recent conversation history (MongoDB with immediate memory fallback)
     history = []
     try:
         cursor = db.messages.find(
@@ -113,6 +114,9 @@ async def chat_endpoint(req: ChatRequest):
         history = await cursor.to_list(length=10)
     except Exception as exc:
         logger.debug("History query notice: %s", exc)
+
+    if not history:
+        history = get_memory_messages(conversation_id)
 
     # 3. Check for any pending action from previous turn (for Guardrail confirmation)
     pending_action = await get_last_pending_action(conversation_id)
@@ -263,25 +267,31 @@ async def chat_endpoint(req: ChatRequest):
             }
         )
 
+        reply_now = datetime.now(timezone.utc).isoformat()
+        asst_msg_doc = {
+            "id": assistant_message_id,
+            "conversation_id": conversation_id,
+            "user_id": user_id,
+            "role": "assistant",
+            "content": final_content,
+            "sources_used": sources_used,
+            "tools_used": tools_used,
+            "created_at": reply_now
+        }
+        if req.attached_doc:
+            asst_msg_doc["attached_doc"] = req.attached_doc
+
+        # Always persist in fast disk-backed memory first
+        save_memory_message(asst_msg_doc)
+        save_memory_conversation({
+            "id": conversation_id,
+            "updated_at": reply_now,
+            "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content,
+            "attached_doc": req.attached_doc
+        })
+
         # Record assistant reply message in MongoDB
         try:
-            reply_now = datetime.now(timezone.utc).isoformat()
-            asst_msg_doc = {
-                "id": assistant_message_id,
-                "conversation_id": conversation_id,
-                "user_id": user_id,
-                "role": "assistant",
-                "content": final_content,
-                "sources_used": sources_used,
-                "tools_used": tools_used,
-                "created_at": reply_now
-            }
-            if req.attached_doc:
-                asst_msg_doc["attached_doc"] = req.attached_doc
-
-            await db.messages.insert_one(asst_msg_doc)
-            save_memory_message(asst_msg_doc)
-            
             conv_set = {
                 "updated_at": reply_now,
                 "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content
@@ -289,13 +299,7 @@ async def chat_endpoint(req: ChatRequest):
             if req.attached_doc:
                 conv_set["attached_doc"] = req.attached_doc
 
-            save_memory_conversation({
-                "id": conversation_id,
-                "updated_at": reply_now,
-                "last_message": final_content[:80] + "..." if len(final_content) > 80 else final_content,
-                "attached_doc": req.attached_doc
-            })
-
+            await db.messages.insert_one(asst_msg_doc)
             await db.conversations.update_one(
                 {"id": conversation_id},
                 {
